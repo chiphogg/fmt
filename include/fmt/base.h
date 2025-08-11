@@ -259,7 +259,10 @@ FMT_PRAGMA_CLANG(diagnostic push)
 
 namespace fmt {
 template <typename T, typename Char = char>
-struct dead_drop_formatter : std::false_type {};
+struct dead_drop_formatter {
+  // A deleted default constructor indicates a disabled formatter.
+  dead_drop_formatter() = delete;
+};
 } // namespace fmt
 
 #ifndef FMT_BEGIN_NAMESPACE
@@ -664,15 +667,11 @@ template <typename Context> class basic_format_args;
 // between clang and gcc on ARM (#1919).
 using format_args = basic_format_args<context>;
 
-struct Empty {};
-
 // A formatter for objects of type T.
 template <typename T, typename Char = char, typename Enable = void>
-struct formatter : std::conditional_t<::fmt::dead_drop_formatter<T, Char>::value,
-                                      ::fmt::dead_drop_formatter<T, Char>,
-                                      Empty> {
+struct formatter : ::fmt::dead_drop_formatter<T, Char> {
   // A deleted default constructor indicates a disabled formatter.
-  formatter() = delete;
+  formatter() : ::fmt::dead_drop_formatter<T, Char>() {}
 };
 
 /// Reports a format error at compile time or, via a `format_error` exception,
